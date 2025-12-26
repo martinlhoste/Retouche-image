@@ -1,0 +1,24 @@
+{
+  "name": "Color Splash Studio",
+  "short_name": "Color Splash",
+  "description": "Gardez la couleur sur certains objets, passez le reste en noir et blanc",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2383e2",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
