@@ -1,0 +1,1897 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Color Splash">
+    <meta name="theme-color" content="#2383e2">
+    <meta name="description" content="Gardez la couleur sur certains objets, passez le reste en noir et blanc">
+    
+    <title>Color Splash</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    
+    <style>
+        :root {
+            --text: #37352f;
+            --text-secondary: #6b6b6b;
+            --text-muted: #9b9a97;
+            --bg: #ffffff;
+            --bg-secondary: #f7f6f3;
+            --bg-hover: #efefef;
+            --border: #e8e8e8;
+            --accent: #2383e2;
+            --accent-light: #e8f2fc;
+            --radius: 4px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 14px;
+            color: var(--text);
+            background: var(--bg);
+            line-height: 1.5;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Layout */
+        .app {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            background: var(--bg);
+        }
+
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sidebar-title::before {
+            content: "◐";
+            font-size: 16px;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 16px;
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 8px 12px 4px;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 13px;
+            transition: background 0.1s;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .sidebar-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .sidebar-item.active {
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+
+        .sidebar-item-icon {
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .sidebar-item.active .sidebar-item-icon {
+            opacity: 1;
+        }
+
+        /* Slider in sidebar */
+        .slider-group {
+            padding: 8px 12px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .slider-value {
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            -webkit-appearance: none;
+            background: var(--border);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--bg);
+            border: 2px solid var(--text-muted);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: border-color 0.15s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            border-color: var(--accent);
+        }
+
+        /* Color picker */
+        .color-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+        }
+
+        .color-swatch {
+            width: 28px;
+            height: 28px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .color-swatch input {
+            position: absolute;
+            width: 150%;
+            height: 150%;
+            top: -25%;
+            left: -25%;
+            cursor: pointer;
+            opacity: 0;
+        }
+
+        .color-hex {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: "SF Mono", Monaco, monospace;
+        }
+
+        /* Main area */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-secondary);
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-info {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            font-family: inherit;
+            font-size: 13px;
+            padding: 6px 12px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text-secondary);
+        }
+
+        .btn:hover {
+            background: var(--bg-hover);
+            border-color: var(--text-muted);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1a6fc9;
+            border-color: #1a6fc9;
+        }
+
+        .btn-ghost {
+            border: none;
+            background: none;
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg-hover);
+        }
+
+        /* Canvas area */
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            overflow: auto;
+            position: relative;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            background: var(--bg);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.04);
+            transform-origin: center center;
+            transition: transform 0.1s ease-out;
+        }
+
+        /* Zoom controls */
+        .zoom-controls {
+            position: fixed;
+            bottom: 50px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 100;
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            border-radius: 6px;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text);
+        }
+
+        .zoom-btn:hover {
+            background: var(--bg-hover);
+        }
+
+        .zoom-btn:active {
+            background: var(--border);
+        }
+
+        .zoom-level {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            padding: 4px 0;
+        }
+
+        #mainCanvas {
+            display: block;
+            border-radius: 8px;
+            /* Rendu haute qualité */
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+        }
+
+        #selectionCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            border-radius: 8px;
+            image-rendering: -webkit-optimize-contrast;
+        }
+
+        /* Upload zone */
+        .upload-zone {
+            width: 480px;
+            height: 320px;
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--bg);
+        }
+
+        .upload-zone:hover {
+            border-color: var(--text-muted);
+            background: var(--bg-hover);
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--accent);
+            background: var(--accent-light);
+        }
+
+        .upload-icon {
+            font-size: 32px;
+            opacity: 0.4;
+        }
+
+        .upload-text {
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .upload-text-main {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .upload-text-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        /* Status bar */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 20px;
+            background: var(--bg);
+            border-top: 1px solid var(--border);
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* Mode tabs */
+        .mode-tabs {
+            display: flex;
+            padding: 0 8px;
+            gap: 2px;
+            margin-bottom: 8px;
+        }
+
+        .mode-tab {
+            flex: 1;
+            padding: 8px;
+            font-size: 12px;
+            text-align: center;
+            border: none;
+            background: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: var(--radius);
+            transition: all 0.15s;
+        }
+
+        .mode-tab:hover {
+            background: var(--bg-hover);
+        }
+
+        .mode-tab.active {
+            background: var(--bg-secondary);
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 8px 12px;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--text);
+            color: var(--bg);
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            opacity: 0;
+            transition: all 0.2s;
+            pointer-events: none;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Brush cursor */
+        .brush-cursor {
+            position: fixed;
+            pointer-events: none;
+            border: 1.5px solid var(--text);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            opacity: 0.5;
+        }
+
+        /* Hidden */
+        .hidden { display: none !important; }
+
+        /* Selections list */
+        .selections-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .empty-selections {
+            padding: 12px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .selection-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: var(--radius);
+            margin-bottom: 2px;
+        }
+
+        .selection-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .selection-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .selection-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .selection-name {
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .selection-type {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .selection-delete {
+            width: 20px;
+            height: 20px;
+            border: none;
+            background: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.15s, background 0.15s;
+        }
+
+        .selection-item:hover .selection-delete {
+            opacity: 1;
+        }
+
+        .selection-delete:hover {
+            background: var(--bg-hover);
+            color: #e24a23;
+        }
+
+        .btn-clear-all {
+            width: 100%;
+            margin-top: 8px;
+            justify-content: center;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .app {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 45vh;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                order: 2;
+            }
+
+            .sidebar-header {
+                display: none;
+            }
+
+            .sidebar-content {
+                padding: 8px;
+            }
+
+            .sidebar-section {
+                margin-bottom: 8px;
+            }
+
+            .section-label {
+                padding: 4px 8px 2px;
+                font-size: 10px;
+            }
+
+            .sidebar-item {
+                padding: 6px 8px;
+                font-size: 12px;
+            }
+
+            .mode-tabs {
+                padding: 0 4px;
+            }
+
+            .mode-tab {
+                padding: 6px;
+                font-size: 11px;
+            }
+
+            .slider-group {
+                padding: 4px 8px;
+            }
+
+            .slider-label {
+                font-size: 11px;
+            }
+
+            .main {
+                order: 1;
+                flex: 1;
+                min-height: 55vh;
+            }
+
+            .header {
+                padding: 8px 12px;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .header-left {
+                display: none;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .btn {
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+
+            .canvas-container {
+                padding: 12px;
+            }
+
+            .upload-zone {
+                width: 100%;
+                max-width: 300px;
+                height: 200px;
+            }
+
+            .upload-icon {
+                font-size: 24px;
+            }
+
+            .upload-text-main {
+                font-size: 13px;
+            }
+
+            .status-bar {
+                padding: 6px 12px;
+                font-size: 10px;
+            }
+
+            .notification {
+                bottom: auto;
+                top: 60px;
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+
+            /* Tools en grille sur mobile */
+            .sidebar-section:has(.sidebar-item[data-tool]) {
+                display: block;
+            }
+
+            .sidebar-section:has(.sidebar-item[data-tool]) .sidebar-item {
+                display: inline-flex;
+                width: auto;
+                margin-right: 4px;
+                margin-bottom: 4px;
+            }
+
+            .color-row {
+                padding: 4px 8px;
+            }
+
+            .color-swatch {
+                width: 24px;
+                height: 24px;
+            }
+
+            .color-hex {
+                font-size: 11px;
+            }
+
+            .selections-list {
+                max-height: 80px;
+            }
+
+            .selection-item {
+                padding: 6px 8px;
+            }
+
+            .selection-name {
+                font-size: 11px;
+            }
+
+            .btn-clear-all {
+                padding: 6px;
+                font-size: 11px;
+            }
+
+            .divider {
+                margin: 4px 8px;
+            }
+        }
+
+        /* Très petits écrans */
+        @media (max-width: 400px) {
+            .btn {
+                padding: 6px 8px;
+                font-size: 11px;
+            }
+
+            .header-actions {
+                gap: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">Color Splash</div>
+            </div>
+            
+            <div class="sidebar-content">
+                <!-- Mode -->
+                <div class="sidebar-section">
+                    <div class="section-label">Mode</div>
+                    <div class="mode-tabs">
+                        <button class="mode-tab active" data-mode="object">Objet</button>
+                        <button class="mode-tab" data-mode="color">Couleur</button>
+                    </div>
+                </div>
+
+                <!-- Tools -->
+                <div class="sidebar-section">
+                    <div class="section-label">Outils</div>
+                    <button class="sidebar-item active" data-tool="select">
+                        <span class="sidebar-item-icon">✦</span>
+                        Sélection magique
+                    </button>
+                    <button class="sidebar-item" data-tool="brush">
+                        <span class="sidebar-item-icon">◖</span>
+                        Pinceau
+                    </button>
+                    <button class="sidebar-item" data-tool="eraser">
+                        <span class="sidebar-item-icon">◗</span>
+                        Gomme
+                    </button>
+                    <button class="sidebar-item" data-tool="eyedropper">
+                        <span class="sidebar-item-icon">◉</span>
+                        Pipette
+                    </button>
+                    <button class="sidebar-item" data-tool="pan">
+                        <span class="sidebar-item-icon">✋</span>
+                        Déplacer
+                    </button>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Object settings -->
+                <div class="sidebar-section" id="objectSettings">
+                    <div class="section-label">Paramètres</div>
+                    
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Tolérance</span>
+                            <span class="slider-value" id="toleranceValue">32</span>
+                        </div>
+                        <input type="range" id="toleranceSlider" min="1" max="100" value="32">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Lissage</span>
+                            <span class="slider-value" id="featherValue">3</span>
+                        </div>
+                        <input type="range" id="featherSlider" min="0" max="20" value="3">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Taille pinceau</span>
+                            <span class="slider-value" id="brushSizeValue">20</span>
+                        </div>
+                        <input type="range" id="brushSizeSlider" min="5" max="100" value="20">
+                    </div>
+                </div>
+
+                <!-- Color settings -->
+                <div class="sidebar-section hidden" id="colorSettings">
+                    <div class="section-label">Couleur cible</div>
+                    
+                    <div class="color-row">
+                        <div class="color-swatch" id="colorPreview" style="background: #e24a23;">
+                            <input type="color" id="colorPicker" value="#e24a23">
+                        </div>
+                        <span class="color-hex" id="colorHex">#E24A23</span>
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Tolérance teinte</span>
+                            <span class="slider-value"><span id="hueToleranceValue">15</span>°</span>
+                        </div>
+                        <input type="range" id="hueToleranceSlider" min="1" max="60" value="15">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Tolérance saturation</span>
+                            <span class="slider-value"><span id="satToleranceValue">30</span>%</span>
+                        </div>
+                        <input type="range" id="satToleranceSlider" min="1" max="100" value="30">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>Tolérance luminosité</span>
+                            <span class="slider-value"><span id="lightToleranceValue">30</span>%</span>
+                        </div>
+                        <input type="range" id="lightToleranceSlider" min="1" max="100" value="30">
+                    </div>
+
+                    <button class="btn" id="addColorSelectionBtn" style="width: 100%; margin-top: 8px; justify-content: center;">
+                        + Ajouter cette couleur
+                    </button>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Selections list -->
+                <div class="sidebar-section">
+                    <div class="section-label">Sélections</div>
+                    <div id="selectionsList" class="selections-list">
+                        <div class="empty-selections">Aucune sélection</div>
+                    </div>
+                    <button class="btn btn-clear-all hidden" id="clearAllBtn">Tout effacer</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main -->
+        <main class="main">
+            <header class="header">
+                <div class="header-left">
+                    <span class="header-info" id="imageDimensions">Aucune image</span>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-ghost" id="resetBtn">Réinitialiser</button>
+                    <button class="btn" id="undoBtn">Annuler</button>
+                    <button class="btn btn-primary" id="applyBtn">Appliquer</button>
+                    <button class="btn" id="downloadBtn">Télécharger</button>
+                </div>
+            </header>
+
+            <div class="canvas-container">
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">◐</div>
+                    <div class="upload-text">
+                        <div class="upload-text-main">Déposer une image ici</div>
+                        <div class="upload-text-sub">ou cliquer pour parcourir</div>
+                    </div>
+                </div>
+
+                <div class="canvas-wrapper hidden" id="canvasWrapper">
+                    <canvas id="mainCanvas"></canvas>
+                    <canvas id="selectionCanvas"></canvas>
+                    <div class="loading-overlay" id="loadingOverlay">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-bar">
+                <span id="statusText">Prêt</span>
+                <span id="cursorPos">—</span>
+            </div>
+
+            <input type="file" id="fileInput" accept="image/*">
+        </main>
+
+        <!-- Zoom controls -->
+        <div class="zoom-controls" id="zoomControls" style="display: none;">
+            <button class="zoom-btn" id="zoomInBtn">+</button>
+            <div class="zoom-level"><span id="zoomLevel">100</span>%</div>
+            <button class="zoom-btn" id="zoomOutBtn">−</button>
+            <button class="zoom-btn" id="zoomFitBtn">⊡</button>
+        </div>
+    </div>
+
+    <div class="brush-cursor hidden" id="brushCursor"></div>
+    <div class="notification" id="notification"></div>
+
+    <!-- Hidden canvases -->
+    <canvas id="originalCanvas" style="display:none;"></canvas>
+    <canvas id="maskCanvas" style="display:none;"></canvas>
+    <canvas id="tempCanvas" style="display:none;"></canvas>
+
+    <script>
+        // State
+        const state = {
+            image: null,
+            originalImageData: null,
+            zoom: 1,
+            viewZoom: 1,
+            panX: 0,
+            panY: 0,
+            isPanning: false,
+            lastPanX: 0,
+            lastPanY: 0,
+            pinchStartDist: 0,
+            pinchStartZoom: 1,
+            currentTool: 'select',
+            currentMode: 'object',
+            isDrawing: false,
+            tolerance: 32,
+            feather: 3,
+            brushSize: 20,
+            selectedColor: { h: 14, s: 80, l: 52 },
+            hueTolerance: 15,
+            satTolerance: 30,
+            lightTolerance: 30,
+            undoStack: [],
+            mask: null,
+            selections: [],
+            selectionCounter: 0
+        };
+
+        // Elements
+        const el = {
+            uploadZone: document.getElementById('uploadZone'),
+            fileInput: document.getElementById('fileInput'),
+            canvasWrapper: document.getElementById('canvasWrapper'),
+            mainCanvas: document.getElementById('mainCanvas'),
+            selectionCanvas: document.getElementById('selectionCanvas'),
+            originalCanvas: document.getElementById('originalCanvas'),
+            maskCanvas: document.getElementById('maskCanvas'),
+            tempCanvas: document.getElementById('tempCanvas'),
+            loadingOverlay: document.getElementById('loadingOverlay'),
+            brushCursor: document.getElementById('brushCursor'),
+            notification: document.getElementById('notification'),
+            statusText: document.getElementById('statusText'),
+            imageDimensions: document.getElementById('imageDimensions'),
+            cursorPos: document.getElementById('cursorPos'),
+            objectSettings: document.getElementById('objectSettings'),
+            colorSettings: document.getElementById('colorSettings'),
+            colorPreview: document.getElementById('colorPreview'),
+            colorPicker: document.getElementById('colorPicker'),
+            colorHex: document.getElementById('colorHex'),
+            selectionsList: document.getElementById('selectionsList'),
+            clearAllBtn: document.getElementById('clearAllBtn'),
+            zoomControls: document.getElementById('zoomControls'),
+            zoomLevel: document.getElementById('zoomLevel'),
+            canvasContainer: document.querySelector('.canvas-container')
+        };
+
+        const ctx = el.mainCanvas.getContext('2d');
+        const selCtx = el.selectionCanvas.getContext('2d');
+        const origCtx = el.originalCanvas.getContext('2d');
+        const maskCtx = el.maskCanvas.getContext('2d');
+        const tempCtx = el.tempCanvas.getContext('2d');
+
+        // Utilities
+        function notify(msg) {
+            el.notification.textContent = msg;
+            el.notification.classList.add('show');
+            setTimeout(() => el.notification.classList.remove('show'), 2500);
+        }
+
+        function setStatus(text) {
+            el.statusText.textContent = text;
+        }
+
+        function rgbToHsl(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+            if (max === min) {
+                h = s = 0;
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                    case g: h = ((b - r) / d + 2) / 6; break;
+                    case b: h = ((r - g) / d + 4) / 6; break;
+                }
+            }
+            return { h: h * 360, s: s * 100, l: l * 100 };
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        function rgbToHex(r, g, b) {
+            return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+        }
+
+        // Image loading
+        function loadImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    state.image = img;
+                    initCanvases();
+                    el.uploadZone.classList.add('hidden');
+                    el.canvasWrapper.classList.remove('hidden');
+                    el.imageDimensions.textContent = `${img.width} × ${img.height}`;
+                    notify('Image chargée');
+                    setStatus('Cliquez pour sélectionner');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function initCanvases() {
+            const img = state.image;
+            const maxSize = Math.min(window.innerWidth - 320, window.innerHeight - 160);
+            const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+            
+            const w = Math.round(img.width * scale);
+            const h = Math.round(img.height * scale);
+
+            [el.mainCanvas, el.selectionCanvas].forEach(c => {
+                c.width = w;
+                c.height = h;
+            });
+
+            [el.originalCanvas, el.maskCanvas, el.tempCanvas].forEach(c => {
+                c.width = img.width;
+                c.height = img.height;
+            });
+
+            // Désactiver le lissage pour un affichage plus net
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            selCtx.imageSmoothingEnabled = true;
+            selCtx.imageSmoothingQuality = 'high';
+
+            origCtx.drawImage(img, 0, 0);
+            state.originalImageData = origCtx.getImageData(0, 0, img.width, img.height);
+
+            maskCtx.fillStyle = 'black';
+            maskCtx.fillRect(0, 0, img.width, img.height);
+            state.mask = maskCtx.getImageData(0, 0, img.width, img.height);
+
+            ctx.drawImage(img, 0, 0, w, h);
+            selCtx.clearRect(0, 0, w, h);
+
+            state.zoom = scale;
+            state.displayScale = scale;
+            state.viewZoom = 1;
+            state.panX = 0;
+            state.panY = 0;
+            
+            // Afficher les contrôles de zoom
+            el.zoomControls.style.display = 'flex';
+            updateCanvasTransform();
+        }
+
+        function updateCanvasTransform() {
+            el.canvasWrapper.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.viewZoom})`;
+            el.zoomLevel.textContent = Math.round(state.viewZoom * 100);
+        }
+
+        function zoomIn() {
+            state.viewZoom = Math.min(5, state.viewZoom * 1.3);
+            updateCanvasTransform();
+        }
+
+        function zoomOut() {
+            state.viewZoom = Math.max(0.2, state.viewZoom / 1.3);
+            updateCanvasTransform();
+        }
+
+        function zoomFit() {
+            state.viewZoom = 1;
+            state.panX = 0;
+            state.panY = 0;
+            updateCanvasTransform();
+        }
+
+        // Selection
+        function magicWand(x, y) {
+            setStatus('Analyse...');
+            el.loadingOverlay.classList.add('active');
+
+            setTimeout(() => {
+                const img = state.image;
+                const scaleX = img.width / el.mainCanvas.width;
+                const scaleY = img.height / el.mainCanvas.height;
+                const imgX = Math.floor(x * scaleX);
+                const imgY = Math.floor(y * scaleY);
+
+                const data = state.originalImageData.data;
+                const width = img.width;
+                const height = img.height;
+
+                const idx = (imgY * width + imgX) * 4;
+                const targetR = data[idx];
+                const targetG = data[idx + 1];
+                const targetB = data[idx + 2];
+
+                const visited = new Uint8Array(width * height);
+                const selectionMask = new Uint8Array(width * height);
+                const stack = [[imgX, imgY]];
+                const tolerance = state.tolerance;
+
+                function match(i) {
+                    const dr = data[i] - targetR;
+                    const dg = data[i + 1] - targetG;
+                    const db = data[i + 2] - targetB;
+                    return Math.sqrt(dr * dr + dg * dg + db * db) <= tolerance * 2.55;
+                }
+
+                while (stack.length > 0) {
+                    const [cx, cy] = stack.pop();
+                    if (cx < 0 || cx >= width || cy < 0 || cy >= height) continue;
+                    const pos = cy * width + cx;
+                    if (visited[pos]) continue;
+                    visited[pos] = 1;
+                    if (match(pos * 4)) {
+                        selectionMask[pos] = 255;
+                        stack.push([cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]);
+                    }
+                }
+
+                const feathered = featherMask(selectionMask, width, height, state.feather);
+                
+                // Créer une nouvelle sélection
+                const selectionId = ++state.selectionCounter;
+                const color = rgbToHex(targetR, targetG, targetB);
+                
+                state.selections.push({
+                    id: selectionId,
+                    type: 'object',
+                    color: color,
+                    mask: feathered
+                });
+
+                rebuildMainMask();
+                updateSelectionsList();
+                drawOverlay();
+                
+                el.loadingOverlay.classList.remove('active');
+                setStatus('Zone sélectionnée');
+                notify('Sélection #' + selectionId + ' ajoutée');
+            }, 30);
+        }
+
+        function rebuildMainMask() {
+            // Reconstruire le masque principal à partir de toutes les sélections
+            const img = state.image;
+            const width = img.width;
+            const height = img.height;
+            const mainMask = state.mask.data;
+            
+            // Reset le masque à noir
+            for (let i = 0; i < mainMask.length; i += 4) {
+                mainMask[i] = mainMask[i + 1] = mainMask[i + 2] = 0;
+            }
+            
+            // Fusionner toutes les sélections
+            for (const sel of state.selections) {
+                for (let i = 0; i < sel.mask.length; i++) {
+                    if (sel.mask[i] > 0) {
+                        const idx = i * 4;
+                        mainMask[idx] = Math.max(mainMask[idx], sel.mask[i]);
+                        mainMask[idx + 1] = Math.max(mainMask[idx + 1], sel.mask[i]);
+                        mainMask[idx + 2] = Math.max(mainMask[idx + 2], sel.mask[i]);
+                    }
+                }
+            }
+        }
+
+        function removeSelection(id) {
+            state.selections = state.selections.filter(s => s.id !== id);
+            rebuildMainMask();
+            updateSelectionsList();
+            drawOverlay();
+            notify('Sélection supprimée');
+        }
+
+        function clearAllSelections() {
+            state.selections = [];
+            rebuildMainMask();
+            updateSelectionsList();
+            drawOverlay();
+            notify('Toutes les sélections effacées');
+        }
+
+        function updateSelectionsList() {
+            if (state.selections.length === 0) {
+                el.selectionsList.innerHTML = '<div class="empty-selections">Aucune sélection</div>';
+                el.clearAllBtn.classList.add('hidden');
+                return;
+            }
+
+            el.clearAllBtn.classList.remove('hidden');
+            el.selectionsList.innerHTML = state.selections.map(sel => `
+                <div class="selection-item" data-id="${sel.id}">
+                    <div class="selection-color" style="background: ${sel.color}"></div>
+                    <div class="selection-info">
+                        <div class="selection-name">Sélection #${sel.id}</div>
+                        <div class="selection-type">${sel.type === 'object' ? 'Objet' : 'Couleur'}</div>
+                    </div>
+                    <button class="selection-delete" data-id="${sel.id}">×</button>
+                </div>
+            `).join('');
+
+            // Ajouter les event listeners
+            el.selectionsList.querySelectorAll('.selection-delete').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    removeSelection(parseInt(btn.dataset.id));
+                });
+            });
+        }
+
+        function featherMask(mask, width, height, radius) {
+            if (radius === 0) return mask;
+            const result = new Uint8Array(mask.length);
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    let sum = 0, count = 0;
+                    for (let ky = -radius; ky <= radius; ky++) {
+                        for (let kx = -radius; kx <= radius; kx++) {
+                            const nx = x + kx, ny = y + ky;
+                            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                                sum += mask[ny * width + nx];
+                                count++;
+                            }
+                        }
+                    }
+                    result[y * width + x] = Math.round(sum / count);
+                }
+            }
+            return result;
+        }
+
+        function brushPaint(x, y, erase = false) {
+            const img = state.image;
+            const scaleX = img.width / el.mainCanvas.width;
+            const scaleY = img.height / el.mainCanvas.height;
+            const imgX = Math.floor(x * scaleX);
+            const imgY = Math.floor(y * scaleY);
+            const radius = Math.floor(state.brushSize * scaleX / 2);
+
+            const mainMask = state.mask.data;
+            const width = img.width;
+            const height = img.height;
+
+            for (let dy = -radius; dy <= radius; dy++) {
+                for (let dx = -radius; dx <= radius; dx++) {
+                    if (dx * dx + dy * dy <= radius * radius) {
+                        const nx = imgX + dx;
+                        const ny = imgY + dy;
+                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                            const pos = (ny * width + nx) * 4;
+                            const value = erase ? 0 : 255;
+                            mainMask[pos] = value;
+                            mainMask[pos + 1] = value;
+                            mainMask[pos + 2] = value;
+                        }
+                    }
+                }
+            }
+            drawOverlay();
+        }
+
+        // Sauvegarder les modifications pinceau comme une sélection quand on relâche
+        function saveBrushAsSelection() {
+            // On ne crée pas de sélection séparée pour le pinceau,
+            // les modifs sont directement sur le masque principal
+        }
+
+        function selectByColor() {
+            setStatus('Sélection par couleur...');
+            el.loadingOverlay.classList.add('active');
+
+            setTimeout(() => {
+                const img = state.image;
+                const data = state.originalImageData.data;
+                const width = img.width;
+                const height = img.height;
+                const targetHsl = state.selectedColor;
+
+                const selectionMask = new Uint8Array(width * height);
+
+                for (let i = 0; i < data.length; i += 4) {
+                    const hsl = rgbToHsl(data[i], data[i + 1], data[i + 2]);
+                    let hueDiff = Math.abs(hsl.h - targetHsl.h);
+                    if (hueDiff > 180) hueDiff = 360 - hueDiff;
+                    
+                    if (hueDiff <= state.hueTolerance && 
+                        Math.abs(hsl.s - targetHsl.s) <= state.satTolerance && 
+                        Math.abs(hsl.l - targetHsl.l) <= state.lightTolerance) {
+                        selectionMask[i / 4] = 255;
+                    }
+                }
+
+                // Créer une nouvelle sélection
+                const selectionId = ++state.selectionCounter;
+                const hex = el.colorPicker.value;
+                
+                state.selections.push({
+                    id: selectionId,
+                    type: 'color',
+                    color: hex,
+                    mask: selectionMask
+                });
+
+                // Ajouter au masque principal (sans rebuild complet)
+                const mainMask = state.mask.data;
+                for (let i = 0; i < selectionMask.length; i++) {
+                    if (selectionMask[i] > 0) {
+                        const idx = i * 4;
+                        mainMask[idx] = Math.max(mainMask[idx], selectionMask[i]);
+                        mainMask[idx + 1] = Math.max(mainMask[idx + 1], selectionMask[i]);
+                        mainMask[idx + 2] = Math.max(mainMask[idx + 2], selectionMask[i]);
+                    }
+                }
+
+                updateSelectionsList();
+                drawOverlay();
+                
+                el.loadingOverlay.classList.remove('active');
+                setStatus('Couleur sélectionnée');
+                notify('Sélection couleur #' + selectionId + ' ajoutée');
+            }, 30);
+        }
+        
+        // Preview en temps réel pour le mode couleur (sans créer de sélection)
+        function previewColorSelection() {
+            if (!state.image) return;
+            
+            const img = state.image;
+            const data = state.originalImageData.data;
+            const width = img.width;
+            const height = img.height;
+            const targetHsl = state.selectedColor;
+
+            // Reconstruire depuis les sélections existantes
+            const mainMask = state.mask.data;
+            
+            // Reset
+            for (let i = 0; i < mainMask.length; i += 4) {
+                mainMask[i] = mainMask[i + 1] = mainMask[i + 2] = 0;
+            }
+            
+            // Remettre les sélections existantes
+            for (const sel of state.selections) {
+                for (let i = 0; i < sel.mask.length; i++) {
+                    if (sel.mask[i] > 0) {
+                        const idx = i * 4;
+                        mainMask[idx] = Math.max(mainMask[idx], sel.mask[i]);
+                        mainMask[idx + 1] = Math.max(mainMask[idx + 1], sel.mask[i]);
+                        mainMask[idx + 2] = Math.max(mainMask[idx + 2], sel.mask[i]);
+                    }
+                }
+            }
+
+            // Ajouter le preview de la couleur actuelle
+            for (let i = 0; i < data.length; i += 4) {
+                const hsl = rgbToHsl(data[i], data[i + 1], data[i + 2]);
+                let hueDiff = Math.abs(hsl.h - targetHsl.h);
+                if (hueDiff > 180) hueDiff = 360 - hueDiff;
+                
+                if (hueDiff <= state.hueTolerance && 
+                    Math.abs(hsl.s - targetHsl.s) <= state.satTolerance && 
+                    Math.abs(hsl.l - targetHsl.l) <= state.lightTolerance) {
+                    mainMask[i] = Math.max(mainMask[i], 200); // 200 pour différencier du 255 validé
+                    mainMask[i + 1] = Math.max(mainMask[i + 1], 200);
+                    mainMask[i + 2] = Math.max(mainMask[i + 2], 200);
+                }
+            }
+
+            drawOverlay();
+        }
+
+        function eyedropper(x, y) {
+            const img = state.image;
+            const scaleX = img.width / el.mainCanvas.width;
+            const scaleY = img.height / el.mainCanvas.height;
+            const imgX = Math.floor(x * scaleX);
+            const imgY = Math.floor(y * scaleY);
+
+            const data = state.originalImageData.data;
+            const idx = (imgY * img.width + imgX) * 4;
+            const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+
+            const hex = rgbToHex(r, g, b);
+            const hsl = rgbToHsl(r, g, b);
+
+            state.selectedColor = hsl;
+            el.colorPicker.value = hex;
+            el.colorPreview.style.background = hex;
+            el.colorHex.textContent = hex.toUpperCase();
+
+            notify(`Couleur: ${hex}`);
+            if (state.currentMode === 'color') previewColorSelection();
+        }
+
+        // Drawing
+        function drawOverlay() {
+            const w = el.mainCanvas.width;
+            const h = el.mainCanvas.height;
+            selCtx.clearRect(0, 0, w, h);
+
+            tempCtx.putImageData(state.mask, 0, 0);
+            selCtx.globalAlpha = 0.35;
+            selCtx.drawImage(el.tempCanvas, 0, 0, w, h);
+            selCtx.globalAlpha = 1;
+        }
+
+        function applyEffect() {
+            if (!state.image) return;
+            setStatus('Application...');
+            el.loadingOverlay.classList.add('active');
+
+            state.undoStack.push({
+                imageData: ctx.getImageData(0, 0, el.mainCanvas.width, el.mainCanvas.height),
+                mask: new Uint8ClampedArray(state.mask.data) // Sauvegarder aussi le masque
+            });
+
+            setTimeout(() => {
+                const img = state.image;
+                const data = state.originalImageData.data;
+                const maskData = state.mask.data;
+                const width = img.width;
+                const height = img.height;
+
+                // Travailler à la résolution originale
+                const result = new ImageData(width, height);
+                const out = result.data;
+
+                for (let i = 0; i < data.length; i += 4) {
+                    const m = maskData[i] / 255;
+                    const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+                    
+                    // Formule de luminance plus précise (Rec. 709)
+                    const gray = Math.round(0.2126 * r + 0.7152 * g + 0.0722 * b);
+
+                    out[i] = Math.round(gray + (r - gray) * m);
+                    out[i + 1] = Math.round(gray + (g - gray) * m);
+                    out[i + 2] = Math.round(gray + (b - gray) * m);
+                    out[i + 3] = a;
+                }
+
+                // Dessiner le résultat haute qualité puis redimensionner pour l'affichage
+                tempCtx.putImageData(result, 0, 0);
+                
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(el.tempCanvas, 0, 0, el.mainCanvas.width, el.mainCanvas.height);
+                
+                selCtx.clearRect(0, 0, el.selectionCanvas.width, el.selectionCanvas.height);
+
+                el.loadingOverlay.classList.remove('active');
+                setStatus('Effet appliqué');
+                notify('Color Splash appliqué');
+            }, 50);
+        }
+
+        function undo() {
+            if (state.undoStack.length > 0) {
+                const last = state.undoStack.pop();
+                ctx.putImageData(last.imageData, 0, 0);
+                if (last.mask) {
+                    state.mask.data.set(last.mask);
+                }
+                notify('Annulé');
+            }
+        }
+
+        function reset() {
+            if (!state.image) return;
+            maskCtx.fillStyle = 'black';
+            maskCtx.fillRect(0, 0, state.image.width, state.image.height);
+            state.mask = maskCtx.getImageData(0, 0, state.image.width, state.image.height);
+            ctx.drawImage(state.image, 0, 0, el.mainCanvas.width, el.mainCanvas.height);
+            selCtx.clearRect(0, 0, el.selectionCanvas.width, el.selectionCanvas.height);
+            state.undoStack = [];
+            state.selections = [];
+            state.selectionCounter = 0;
+            updateSelectionsList();
+            notify('Réinitialisé');
+        }
+
+        function download() {
+            if (!state.image) return;
+            
+            // Recalculer l'effet à la résolution originale
+            const img = state.image;
+            const data = state.originalImageData.data;
+            const maskData = state.mask.data;
+            const width = img.width;
+            const height = img.height;
+
+            const result = new ImageData(width, height);
+            const out = result.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const m = maskData[i] / 255;
+                const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+                
+                // Formule de luminance Rec. 709
+                const gray = Math.round(0.2126 * r + 0.7152 * g + 0.0722 * b);
+
+                out[i] = Math.round(gray + (r - gray) * m);
+                out[i + 1] = Math.round(gray + (g - gray) * m);
+                out[i + 2] = Math.round(gray + (b - gray) * m);
+                out[i + 3] = a;
+            }
+
+            // S'assurer que le canvas temp est à la bonne taille
+            el.tempCanvas.width = width;
+            el.tempCanvas.height = height;
+            tempCtx.putImageData(result, 0, 0);
+            
+            const link = document.createElement('a');
+            link.download = 'color-splash-' + width + 'x' + height + '.png';
+            link.href = el.tempCanvas.toDataURL('image/png', 1.0);
+            link.click();
+            notify('Téléchargé en ' + width + '×' + height);
+        }
+
+        // Events
+        el.uploadZone.addEventListener('click', () => el.fileInput.click());
+        el.fileInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) loadImage(e.target.files[0]);
+        });
+
+        el.uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            el.uploadZone.classList.add('dragover');
+        });
+        el.uploadZone.addEventListener('dragleave', () => el.uploadZone.classList.remove('dragover'));
+        el.uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            el.uploadZone.classList.remove('dragover');
+            if (e.dataTransfer.files[0]) loadImage(e.dataTransfer.files[0]);
+        });
+
+        // Tools
+        document.querySelectorAll('.sidebar-item[data-tool]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.sidebar-item[data-tool]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.currentTool = btn.dataset.tool;
+                el.mainCanvas.style.cursor = state.currentTool === 'eyedropper' ? 'crosshair' : 'default';
+            });
+        });
+
+        // Mode
+        document.querySelectorAll('.mode-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.currentMode = btn.dataset.mode;
+                el.objectSettings.classList.toggle('hidden', state.currentMode !== 'object');
+                el.colorSettings.classList.toggle('hidden', state.currentMode !== 'color');
+                
+                if (state.currentMode === 'color' && state.image) {
+                    previewColorSelection();
+                } else if (state.image) {
+                    // Quand on quitte le mode couleur, rebuild le masque sans le preview
+                    rebuildMainMask();
+                    drawOverlay();
+                }
+            });
+        });
+
+        // Clear all button
+        el.clearAllBtn.addEventListener('click', clearAllSelections);
+
+        // Add color selection button
+        document.getElementById('addColorSelectionBtn').addEventListener('click', () => {
+            if (state.image) selectByColor();
+        });
+
+        // Canvas
+        el.mainCanvas.addEventListener('mousedown', (e) => {
+            if (!state.image) return;
+            const rect = el.mainCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (state.currentTool === 'select') magicWand(x, y);
+            else if (state.currentTool === 'brush') { state.isDrawing = true; brushPaint(x, y, false); }
+            else if (state.currentTool === 'eraser') { state.isDrawing = true; brushPaint(x, y, true); }
+            else if (state.currentTool === 'eyedropper') eyedropper(x, y);
+        });
+
+        el.mainCanvas.addEventListener('mousemove', (e) => {
+            const rect = el.mainCanvas.getBoundingClientRect();
+            const x = Math.round(e.clientX - rect.left);
+            const y = Math.round(e.clientY - rect.top);
+            el.cursorPos.textContent = `${x}, ${y}`;
+
+            if (state.currentTool === 'brush' || state.currentTool === 'eraser') {
+                el.brushCursor.classList.remove('hidden');
+                el.brushCursor.style.width = state.brushSize + 'px';
+                el.brushCursor.style.height = state.brushSize + 'px';
+                el.brushCursor.style.left = e.clientX + 'px';
+                el.brushCursor.style.top = e.clientY + 'px';
+            } else {
+                el.brushCursor.classList.add('hidden');
+            }
+
+            if (state.isDrawing && state.image) {
+                if (state.currentTool === 'brush') brushPaint(x, y, false);
+                else if (state.currentTool === 'eraser') brushPaint(x, y, true);
+            }
+        });
+
+        el.mainCanvas.addEventListener('mouseup', () => state.isDrawing = false);
+        el.mainCanvas.addEventListener('mouseleave', () => {
+            state.isDrawing = false;
+            el.brushCursor.classList.add('hidden');
+        });
+
+        // Sliders
+        document.getElementById('toleranceSlider').addEventListener('input', (e) => {
+            state.tolerance = +e.target.value;
+            document.getElementById('toleranceValue').textContent = state.tolerance;
+        });
+        document.getElementById('featherSlider').addEventListener('input', (e) => {
+            state.feather = +e.target.value;
+            document.getElementById('featherValue').textContent = state.feather;
+        });
+        document.getElementById('brushSizeSlider').addEventListener('input', (e) => {
+            state.brushSize = +e.target.value;
+            document.getElementById('brushSizeValue').textContent = state.brushSize;
+        });
+        document.getElementById('hueToleranceSlider').addEventListener('input', (e) => {
+            state.hueTolerance = +e.target.value;
+            document.getElementById('hueToleranceValue').textContent = state.hueTolerance;
+            if (state.currentMode === 'color' && state.image) previewColorSelection();
+        });
+        document.getElementById('satToleranceSlider').addEventListener('input', (e) => {
+            state.satTolerance = +e.target.value;
+            document.getElementById('satToleranceValue').textContent = state.satTolerance;
+            if (state.currentMode === 'color' && state.image) previewColorSelection();
+        });
+        document.getElementById('lightToleranceSlider').addEventListener('input', (e) => {
+            state.lightTolerance = +e.target.value;
+            document.getElementById('lightToleranceValue').textContent = state.lightTolerance;
+            if (state.currentMode === 'color' && state.image) previewColorSelection();
+        });
+
+        // Color picker
+        el.colorPicker.addEventListener('input', (e) => {
+            const hex = e.target.value;
+            const rgb = hexToRgb(hex);
+            state.selectedColor = rgbToHsl(rgb.r, rgb.g, rgb.b);
+            el.colorPreview.style.background = hex;
+            el.colorHex.textContent = hex.toUpperCase();
+            if (state.currentMode === 'color' && state.image) previewColorSelection();
+        });
+
+        // Buttons
+        document.getElementById('applyBtn').addEventListener('click', applyEffect);
+        document.getElementById('undoBtn').addEventListener('click', undo);
+        document.getElementById('resetBtn').addEventListener('click', reset);
+        document.getElementById('downloadBtn').addEventListener('click', download);
+
+        // Keyboard
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); download(); }
+        });
+
+        // Touch support pour mobile avec pinch-to-zoom et pan
+        function getTouchDistance(touches) {
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function getCanvasCoords(clientX, clientY) {
+            const rect = el.mainCanvas.getBoundingClientRect();
+            return {
+                x: (clientX - rect.left) / state.viewZoom,
+                y: (clientY - rect.top) / state.viewZoom
+            };
+        }
+
+        el.canvasContainer.addEventListener('touchstart', (e) => {
+            if (!state.image) return;
+
+            // Pinch-to-zoom avec 2 doigts
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                state.pinchStartDist = getTouchDistance(e.touches);
+                state.pinchStartZoom = state.viewZoom;
+                state.isPanning = false;
+                return;
+            }
+
+            // Un seul doigt
+            const touch = e.touches[0];
+            const rect = el.mainCanvas.getBoundingClientRect();
+            const x = (touch.clientX - rect.left) / state.viewZoom;
+            const y = (touch.clientY - rect.top) / state.viewZoom;
+
+            // Pan avec l'outil pan ou si zoomé > 1
+            if (state.currentTool === 'pan' || (state.viewZoom > 1 && e.touches.length === 1)) {
+                state.isPanning = true;
+                state.lastPanX = touch.clientX;
+                state.lastPanY = touch.clientY;
+                return;
+            }
+
+            e.preventDefault();
+            if (state.currentTool === 'select') magicWand(x, y);
+            else if (state.currentTool === 'brush') { state.isDrawing = true; brushPaint(x, y, false); }
+            else if (state.currentTool === 'eraser') { state.isDrawing = true; brushPaint(x, y, true); }
+            else if (state.currentTool === 'eyedropper') eyedropper(x, y);
+        }, { passive: false });
+
+        el.canvasContainer.addEventListener('touchmove', (e) => {
+            if (!state.image) return;
+
+            // Pinch-to-zoom
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                const dist = getTouchDistance(e.touches);
+                const scale = dist / state.pinchStartDist;
+                state.viewZoom = Math.max(0.5, Math.min(5, state.pinchStartZoom * scale));
+                updateCanvasTransform();
+                return;
+            }
+
+            // Pan
+            if (state.isPanning && e.touches.length === 1) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const dx = touch.clientX - state.lastPanX;
+                const dy = touch.clientY - state.lastPanY;
+                state.panX += dx;
+                state.panY += dy;
+                state.lastPanX = touch.clientX;
+                state.lastPanY = touch.clientY;
+                updateCanvasTransform();
+                return;
+            }
+
+            // Dessin
+            if (state.isDrawing) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const rect = el.mainCanvas.getBoundingClientRect();
+                const x = (touch.clientX - rect.left) / state.viewZoom;
+                const y = (touch.clientY - rect.top) / state.viewZoom;
+
+                if (state.currentTool === 'brush') brushPaint(x, y, false);
+                else if (state.currentTool === 'eraser') brushPaint(x, y, true);
+            }
+        }, { passive: false });
+
+        el.canvasContainer.addEventListener('touchend', (e) => {
+            state.isDrawing = false;
+            state.isPanning = false;
+        });
+
+        // Zoom buttons
+        document.getElementById('zoomInBtn').addEventListener('click', zoomIn);
+        document.getElementById('zoomOutBtn').addEventListener('click', zoomOut);
+        document.getElementById('zoomFitBtn').addEventListener('click', zoomFit);
+
+        // Mouse wheel zoom
+        el.canvasContainer.addEventListener('wheel', (e) => {
+            if (!state.image) return;
+            e.preventDefault();
+            if (e.deltaY < 0) {
+                zoomIn();
+            } else {
+                zoomOut();
+            }
+        }, { passive: false });
+
+        // Service Worker registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW registered'))
+                    .catch(err => console.log('SW registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>
